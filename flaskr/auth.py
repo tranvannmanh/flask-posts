@@ -14,6 +14,7 @@ from flaskr.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
+
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
@@ -45,7 +46,7 @@ def register():
                 }
             # else:
             #     return redirect(url_for('auth.login'))
-        
+
         # flash(error)
     # return render_template('auth/register.html')
     return {
@@ -54,15 +55,14 @@ def register():
         "result": {
             "username": username,
             "password": generate_password_hash(password)
-        } 
+        }
     }
-
 
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.json['username']
+        password = request.json['password']
         db = get_db()
         error = None
         user = db.execute(
@@ -74,14 +74,27 @@ def login():
         elif not check_password_hash(user['password'], password):
             error = 'Incorrect password.'
 
-        if error is None:
-            session.clear()
-            session['user_id'] = user['id']
-            return redirect(url_for('index'))
+        if error is not None:
+            return {
+                "success": True,
+                "error": error,
+                "result": None
+            }
 
-        flash(error)
+        # flash(error)
 
-    return render_template('auth/login.html')
+    session.clear()
+    session['user_id'] = user['id']
+
+    return {
+        "success": True,
+        "error": error,
+        "result":
+        {
+            "username": username,
+            "password": password
+        }
+    }
 
 
 @bp.before_app_request
@@ -104,11 +117,10 @@ def logout():
 
 def login_required(view):
     @functools.wraps(view)
-    
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for('auth.login'))
-        
+
         return view(**kwargs)
-    
+
     return wrapped_view
