@@ -1,12 +1,36 @@
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, String, Integer, Text, DateTime
+from sqlalchemy.orm import declarative_base
 from uuid import uuid4
+from . import database
+from datetime import datetime
 
-db = SQLAlchemy()
+Base = declarative_base()
+db = database.db
+
 def get_uuid():
     return uuid4().hex
 
 class User(db.Model):
     __tablename__ = "USERS"
-    id = db.Column(db.String(32), primary_key=True, unique=True, default=get_uuid)
-    email = db.Column(db.String(345), unique=True)
-    password = db.Column(db.Text, nullable=False)
+    id = Column(Integer, autoincrement=True, primary_key=True, unique=True)
+    fname = Column(String(50), nullable=False)
+    username = Column(String(20), unique=True)
+    password = Column(String(20), nullable=False)
+
+    def __init__(self, fname=None, username=None, password=None):
+        self.fname = fname
+        self.username = username
+        self.password = password
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+    
+
+class Posts(db.Model):
+    __tablename__ = "NEWS"
+    id = Column(Integer, autoincrement=True, unique=True, primary_key=True)
+    title = Column(Text, nullable=False)
+    conent = Column(Text, nullable=False)
+    created = Column(DateTime, default=datetime.now())
+    author = Column(String(100), nullable=True)
+    image = Column(String(345), nullable=True)
