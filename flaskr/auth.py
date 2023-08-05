@@ -47,8 +47,8 @@ def register():
         "result": {
             "fname": fname,
             "username": username,
-            "password": generate_password_hash(password)
-        }
+        },
+        "message": f"đăng ký thành công"
     }
 
 @bp.route('/session-login', methods=['POST'])
@@ -79,7 +79,8 @@ def login():
         "result":
         {
             "username": user.username,
-            "fname": user.fname
+            "fname": user.fname,
+            "user_id": user.id
         }
     }
 
