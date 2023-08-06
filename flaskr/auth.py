@@ -36,7 +36,8 @@ def register():
         return {
             "error": error,
             "success": False,
-            "result": None
+            "result": None,
+            "message": error
         }
     else:
         db.session.add(User(fname=fname, username=username, password=generate_password_hash(password)))
@@ -67,7 +68,8 @@ def login():
         return {
             "success": False,
             "error": error,
-            "result": None
+            "result": None,
+            "message": error
         }
 
     session.clear()
@@ -76,6 +78,7 @@ def login():
     return {
         "success": True,
         "error": error,
+        "message": "Đăng nhập thành công",
         "result":
         {
             "username": user.username,
