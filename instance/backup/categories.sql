@@ -1,0 +1,21 @@
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS "CATEGORY" (
+	id INTEGER, 
+	type VARCHAR(50) NOT NULL, 
+	name VARCHAR(50) NOT NULL, 
+	PRIMARY KEY (type), 
+	UNIQUE (id)
+);
+INSERT INTO CATEGORY VALUES(1,'thoi-su','Thời sự');
+INSERT INTO CATEGORY VALUES(2,'du-lich','Du lịch');
+INSERT INTO CATEGORY VALUES(3,'the-gioi','Thế giới');
+INSERT INTO CATEGORY VALUES(4,'kinh-doanh','Kinh doanh');
+INSERT INTO CATEGORY VALUES(5,'khoa-hoc','Khoa học');
+INSERT INTO CATEGORY VALUES(6,'giai-tri','Giải trí');
+INSERT INTO CATEGORY VALUES(7,'the-thao','Thể thao');
+INSERT INTO CATEGORY VALUES(8,'phap-luat','Pháp luật');
+INSERT INTO CATEGORY VALUES(9,'giao-duc','Giáo dục');
+INSERT INTO CATEGORY VALUES(10,'suc-khoe','Sức khỏe');
+INSERT INTO CATEGORY VALUES(11,'doi-song','Đới sống');
+COMMIT;

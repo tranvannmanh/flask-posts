@@ -31,7 +31,6 @@ class Category(db.Model):
     id = Column(Integer, autoincrement=True, unique=True)
     type = Column(String(50), primary_key=True)
     name = Column(String(50), nullable=False)
-    posts = db.relationship("Posts", backref=db.backref('CATEGORY', lazy='joined'), lazy=True)
 
 class Posts(db.Model):
     __tablename__ = "NEWS"
@@ -43,12 +42,13 @@ class Posts(db.Model):
     image = Column(String(345), nullable=True)
     type = Column(String(50), nullable=False)
 
-# class Recommend(db.Model):
-#     __tablename__="RECOMMENDED"
-#     user_id=Column(Integer, db.ForeignKey("USERS.id"))
-#     post_id=Column(Integer, db.ForeignKey("NEWS.id"))
+class Recommend(db.Model):
+    __tablename__="RECOMMEND"
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    user_id=Column(Integer, nullable=False)
+    post_id=Column(Integer, nullable=False)
 
-recommended = db.Table('RECOMMENDED',
-                       Column('user_id', Integer, ForeignKey("USERS.id"), primary_key=True),
-                       Column('post_id', Integer, ForeignKey("NEWS.id"), primary_key=True)
-                       )
+# recommended = db.Table('RECOMMENDED',
+#                        Column('user_id', Integer, ForeignKey("USERS.id"), primary_key=True),
+#                        Column('post_id', Integer, ForeignKey("NEWS.id"), primary_key=True)
+#                        )
