@@ -40,12 +40,16 @@ def register():
             "message": error
         }
     else:
-        db.session.add(User(fname=fname, username=username, password=generate_password_hash(password)))
+        user = User(fname=fname, username=username, password=generate_password_hash(password))
+        db.session.add(user)
         db.session.commit()
+
+    session['user_id'] = user.id
     return {
         "error": error,
         "success": True,
         "result": {
+            "user_id": user.id,
             "fname": fname,
             "username": username,
         },

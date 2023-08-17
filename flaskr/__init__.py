@@ -48,6 +48,9 @@ def create_app(test_config=None):
     from . import auth
     app.register_blueprint(auth.bp)
 
+    from . import category
+    app.register_blueprint(category.bp)
+
     # from . import blog
     # app.register_blueprint(blog.bp)
     

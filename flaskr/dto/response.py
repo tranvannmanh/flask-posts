@@ -1,22 +1,18 @@
 import json
 
 class Response():
-    def __init__(self, status=0, success=False, message=None, code=500, data=None):
+    def __init__(self, status=1, success=False, message=None, code=500, result=None):
         self.status = status
         self.success=success
         self.message=message
         self.code=code
-        self.data=data
+        self.result=result
 
     def values(self):
         return {
-            "status": self.status,
+            "status": 1,
             "success": self.success,
             "message": self.message,
-            "code": self.code,
-            "data": self.data
+            "code": 200 if self.success else self.code,
+            "result": self.result
         }
-    
-
-res = Response(code=201).values()
-print(json.dumps(res))
