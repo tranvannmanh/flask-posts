@@ -31,6 +31,7 @@ class Category(db.Model):
     id = Column(Integer, autoincrement=True, unique=True)
     type = Column(String(50), primary_key=True)
     name = Column(String(50), nullable=False)
+    image = Column(Text, nullable=True)
 
 class Posts(db.Model):
     __tablename__ = "NEWS"
