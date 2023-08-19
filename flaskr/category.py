@@ -46,15 +46,17 @@ def generate_recommend():
 def get_recommend():
     user_id = session.get('user_id')
     page = int(request.args['page'])
+    pageItems = int(request.args['pageItems'])
 
     recommend_record = Posts.query\
                         .join(Recommend, Posts.id==Recommend.post_id)\
                         .add_column(Recommend.user_id)\
                         .filter_by(user_id=user_id)\
-                        .paginate(page=page, per_page=10)
+                        .paginate(page=page, per_page=pageItems)
     result = {
         "totalPage": 10,
         "currentPage": page,
+        "pageItems": pageItems,
         "data": [{
             "id": item[0].id,
             "title": item[0].title,
