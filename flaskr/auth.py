@@ -11,10 +11,12 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 from . import database
 from . import models
+from . import dto
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 db = database.db
 User = models.User
+res = dto.response.Response
 
 @bp.route('/register', methods=['POST'])
 def register():
@@ -123,10 +125,10 @@ def get_current_user():
 #         ).fetchone()
 
 
-# @bp.route('/logout')
-# def logout():
-#     session.clear()
-#     return redirect(url_for('index'))
+@bp.route('/logout')
+def logout():
+    session.clear()
+    return res(success=True).values()
 
 
 def login_required(view):
