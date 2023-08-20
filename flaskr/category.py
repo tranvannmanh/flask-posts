@@ -32,10 +32,13 @@ def get_all():
 def generate_recommend():
     user_id = session.get('user_id')
     choosed_categories = request.json['choosed_type']
-    print('CHOOSED ...', choosed_categories)
+    # print('CHOOSED ...', choosed_categories)
     recommend_record = []
     for category in choosed_categories:
-        recommended_by_type = Posts.query.filter_by(type=category).order_by(func.random()).limit(33).all()
+        recommended_by_type = Posts.query\
+                                    .filter_by(type=category)\
+                                    .order_by(func.random())\
+                                    .limit(33).all()
         recommend_record = recommend_record + [Recommend(user_id=user_id, post_id=item.id) for item in recommended_by_type]
         # print('RECOMMENDED.......... ', recommended)
     db.session.add_all(recommend_record)

@@ -9,7 +9,7 @@ PATH_LDA_MODEL = "./flaskr/recommender/models/LDA.model"
 PATH_DOC_TOPIC_DIST = "./flaskr/recommender/models/doc_topic_dist.dat"
 
 class LDAModel:
-    def __init__(self, corpus, num_topics, passes, chunksize=100, update_every=1, alpha='auto',
+    def __init__(self, corpus, num_topics, passes, chunksize=100, update_every=1, alpha='auto', eta='auto',
                  per_word_topics=False):
         """
         :param sentences: list or iterable (recommend)
@@ -27,6 +27,7 @@ class LDAModel:
         # hyperparams
         self.num_topics = num_topics
         self.alpha = alpha
+        self.eta = eta
         self.passes = passes
         self.chunksize = chunksize
         # self.random_state = random_state
@@ -51,10 +52,12 @@ class LDAModel:
             corpus=self.corpus_bow, 
             id2word=self.dictionary,
             num_topics=self.num_topics, 
-            alpha=self.alpha, 
+            alpha=self.alpha,
+            eta=self.eta, 
             chunksize=self.chunksize
         )
         self.lda_model.save(PATH_LDA_MODEL)
+        return self.lda_model
 
     def top_similar(self, doc_distribute, docs_topic_distribute, k_similar=10):
         return distances.get_most_similar_news(
