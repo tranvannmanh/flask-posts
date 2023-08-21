@@ -1,111 +1,73 @@
-# from flask import (
-#     Blueprint,
-#     flash,
-#     g,
-#     redirect,
-#     render_template,
-#     request,
-#     url_for
-# )
-# from werkzeug.exceptions import abort
-# from flaskr.auth import login_required
-# from flaskr.db import get_db
+from flask import (
+    Blueprint,
+    request,
+    Response,
+    session,
+)
+from sqlalchemy.sql.expression import func
+import numpy as np
+from . import database
+from . import models
+import json
+from . import dto
+from . import config
+from . import recommender
 
-# bp = Blueprint('blog', __name__)
+bp = Blueprint('news', __name__, url_prefix='/api/news')
+Category = models.Category
+Posts = models.Posts
+Recommend = models.Recommend
+db = database.db
+res = dto.response.Response
+utils=recommender.utils
+distances=recommender.distances
 
-# @bp.route('/')
-# def index():
-#     db = get_db()
-#     posts = db.execute(
-#         """
-#         SELECT p.id, title, body, created, author_id, username
-#         FROM post p JOIN user u ON p.author_id = u.id
-#         ORDER BY created DESC
-#         """
-#     ).fetchall()
-#     return render_template('blog/index.html', posts=posts)
+def load_model():
+    import gensim
+    import joblib
 
+    # load LDA model
+    lda_model = gensim.models.LdaModel.load(
+        config.PATH_LDA_MODEL
+    )
+    # load corpus
+    corpus = gensim.corpora.MmCorpus(
+        config.PATH_CORPUS
+    )
+    # load dictionary
+    id2word = gensim.corpora.Dictionary.load(
+        config.PATH_DICTIONARY
+    )
+    # load documents topic distribution matrix
+    doc_topic_dist = joblib.load(
+        config.PATH_TOPICS_DOCS_DIST
+    )
+    # doc_topic_dist = np.array([np.array(dist) for dist in doc_topic_dist])
 
-# @bp.route('/create', methods=('GET', 'POST'))
-# @login_required
-# def create():
-#     if request.method == 'POST':
-#         title = request.form['title']
-#         body = request.form['body']
-#         error = None
+    return lda_model, corpus, id2word, doc_topic_dist
 
-#         if not title:
-#             error = 'Title is required.'
+lda_model, corpus, id2word, topics_docs_dist = load_model()
 
-#         if error is not None:
-#             flash(error)
-#         else:
-#             db = get_db()
-#             db.execute(
-#                 '''
-#                 INSERT INTO post (title, body, author_id) VALUES (?, ?, ?)
-#                 ''',
-#                 (title, body, g.user['id'])
-#             )
-#             db.commit()
-#             return redirect(url_for('blog.index'))
-
-#     return render_template('blog/create.html')
-
-
-# def get_post(id, check_author=True):
-#     post = get_db().execute(
-#         '''
-#         SELECT p.id, title, body, created, author_id, username
-#         FROM post p JOIN user u ON p.author_id = u.id
-#         WHERE p.id = ?
-#         ''',
-#         (id,)
-#     ).fetchone()
-
-#     if post is None:
-#         abort(404, f'Post id {id} does not exist.')
+@bp.route('/get-similar', methods=['GET'])
+def get_k_similar():
+    items_size = request.args['itemsSize']
+    news_id = request.args['newsId']
+    news_base = Posts.query.filter_by(id=news_id).first()
+    content_preprocessed = utils.simple_preprocessing(news_base.content)
+    bow = id2word.doc2bow(content_preprocessed)
+    topics_dist = np.array(
+        [doc_top[1] for doc_top in lda_model.get_document_topics(bow=bow, minimum_probability=0.0)]
+    )
+    print(f'TYPES........ {type(topics_dist)} - {type(topics_docs_dist)}')
     
-#     if check_author and post['author_id'] != g.user['id']:
-#         abort(403)
-
-#     return post
-
-
-# @bp.route('/<int:id>/update', methods=('GET', 'POST'))
-# @login_required
-# def update(id):
-#     post = get_post(id)
-#     if request.method == 'POST':
-#         title = request.form['title']
-#         body = request.form['body']
-#         error = None
-
-#         if not title:
-#             error = 'Title is required.'
-
-#         if error is not None:
-#             flash(error)
-#         else:
-#             db = get_db()
-#             db.execute(
-#                 '''
-#                 UPDATE post SET title = ?, body = ?
-#                 WHERE id = ?
-#                 ''',
-#                 (title, body, id)
-#             )
-#             db.commit()
-#             return redirect(url_for('blog.index'))
-
-#     return render_template('blog/update.html', post=post)
-
-
-# @bp.route('/<int:id>/delete', methods=('POST',))
-# @login_required
-# def delete(id):
-#     get_post(id)
-#     db = get_db()
-#     db.execute('DELETE FROM post WHERE id = ?', (id,))
-#     db.commit()
-#     return redirect(url_for('blog.index'))
+    # most_sims_offsets = [int(offset) for offset in distances.get_most_similar_news(topics_dist, np.array(topics_docs_dist), k=int(items_size))]
+    most_sims_offsets = distances.get_most_similar_news(topics_dist, np.array(topics_docs_dist), k=int(items_size)+1)[1:]
+    most_similar_news = []
+    for offset in most_sims_offsets:
+        news = Posts.query.offset(offset).first()
+        most_similar_news.append({"id": news.id, "title": news.title})
+    print('MOST_SIMILAR_OFFSET...... ', most_sims_offsets)
+    return res(success=True, 
+               result=most_similar_news,
+               code=Response.status_code
+               ).values()

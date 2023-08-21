@@ -55,6 +55,7 @@ def get_recommend():
                         .join(Recommend, Posts.id==Recommend.post_id)\
                         .add_column(Recommend.user_id)\
                         .filter_by(user_id=user_id)\
+                        .order_by(func.random())\
                         .paginate(page=page, per_page=pageItems)
     result = {
         "totalPage": 10,

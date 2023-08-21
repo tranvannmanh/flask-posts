@@ -23,3 +23,9 @@ def get_most_similar_news(doc_distribute, matrix_distribute, k=10):
 
     # return index of most K similar distribution from list
     return np.argsort(sims)[:k]
+
+
+# a = np.array([.2, .3, .5])
+# b= np.array([[.2, .2, .6], [.1, .2, .7]])
+
+# print(get_most_similar_news(a, b))

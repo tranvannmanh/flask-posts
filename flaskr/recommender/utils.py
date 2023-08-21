@@ -10,7 +10,7 @@ def stopwords(text_file_path=stopwords_path):
 
 _stopwords_default = stopwords()
 def remove_stopwords(text, stopwords=_stopwords_default):
-    return " ".join([word for word in text.split() if word not in stopwords])
+    return [word for word in text.split() if word not in stopwords]
 
 def remove_numeric(text):
     table = str.maketrans({key: None for key in string.digits})
@@ -37,6 +37,10 @@ def vi_tokenizer(text):
     return ViTokenizer.tokenize(text)
 
 def simple_preprocessing(text):
+    '''
+    return list of token
+    (corpus)
+    '''
     _text = remove_newline_characters(text)
     _text = remove_emails(_text)
     _text = remove_links(_text)
@@ -48,5 +52,5 @@ def simple_preprocessing(text):
     return _text
 
 
-print(simple_preprocessing('abd csjf asjdfl@gmail.com \ns,ndf https:/;sdflsj.com sjdlfj love you http://google.com 843 \n \n 094038 lsjd . =>'))
-print('\n\nabd csjf asjdfl@gmail.com \ns,ndf https:/;sdflsj.com sjdlfj love you http://google.com 843 \n \n 094038 lsjd . =>')
+# print(simple_preprocessing('abd csjf asjdfl@gmail.com \ns,ndf https:/;sdflsj.com sjdlfj love you http://google.com 843 \n \n 094038 lsjd . =>'))
+# print('\n\nabd csjf asjdfl@gmail.com \ns,ndf https:/;sdflsj.com sjdlfj love you http://google.com 843 \n \n 094038 lsjd . =>')
