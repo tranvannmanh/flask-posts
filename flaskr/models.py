@@ -55,7 +55,7 @@ class YouLike(db.Model):
     id=Column(Integer, autoincrement=True, primary_key=True)
     user_id=Column(Integer, nullable=False)
     post_id=Column(Integer, nullable=False)
-    createAt=Column(DateTime, nullable=False)
+    createAt=Column(DateTime, onupdate=datetime.now, default=datetime.now)
 
 class History(db.Model):
     __tablename__='HISTORY'
