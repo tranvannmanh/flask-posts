@@ -46,8 +46,26 @@ class Posts(db.Model):
 class Recommend(db.Model):
     __tablename__="RECOMMEND"
     id = Column(Integer, autoincrement=True, primary_key=True)
+    from_post_id=Column(Integer, nullable=True)
     user_id=Column(Integer, nullable=False)
     post_id=Column(Integer, nullable=False)
+
+class YouLike(db.Model):
+    __tablename__="YOU_LIKE"
+    id=Column(Integer, autoincrement=True, primary_key=True)
+    user_id=Column(Integer, nullable=False)
+    post_id=Column(Integer, nullable=False)
+    createAt=Column(DateTime, onupdate=datetime.now, default=datetime.now)
+
+class History(db.Model):
+    __tablename__='HISTORY'
+    id=Column(Integer, autoincrement=True, primary_key=True)
+    readAt=Column(DateTime, nullable=False)
+    user_id=Column(Integer, nullable=False)
+    post_id=Column(Integer, nullable=False)
+
+
+
 
 # recommended = db.Table('RECOMMENDED',
 #                        Column('user_id', Integer, ForeignKey("USERS.id"), primary_key=True),
