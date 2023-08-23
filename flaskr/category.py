@@ -38,7 +38,7 @@ def generate_recommend():
         recommended_by_type = Posts.query\
                                     .filter_by(type=category)\
                                     .order_by(func.random())\
-                                    .limit(33).all()
+                                    .limit(10).all()
         recommend_record = recommend_record + [Recommend(user_id=user_id, post_id=item.id) for item in recommended_by_type]
         # print('RECOMMENDED.......... ', recommended)
     db.session.add_all(recommend_record)

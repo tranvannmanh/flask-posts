@@ -5,7 +5,7 @@ from flask import (
     session,
 )
 from sqlalchemy.sql.expression import func
-from sqlalchemy import desc
+from sqlalchemy import desc, asc, and_, or_
 import numpy as np
 from . import database
 from . import models
@@ -83,17 +83,48 @@ def update_you_like():
     news_id = request.args['newsId']
     _createAt = datetime.now()
     all_you_like = YouLike.query.filter_by(user_id=user_id).all()
-    if len(all_you_like) >= 10:
-        deleted = YouLike.query.filter_by(user_id=user_id)\
-                        .order_by(YouLike.createAt.timestamp.desc())\
-                        .limit(len(all_you_like) - 9)
-        print('DELETE.................. ', deleted)
-        results = [{"id": item[0]} for item in deleted]
-        return res(success=True, result=results)
+
+    # remove old records
+    if len(all_you_like) >= 5:
+        old_records = YouLike.query.filter_by(user_id=user_id)\
+                        .order_by(asc(YouLike.createAt))\
+                        .limit(len(all_you_like) - 4)\
+                        .all()
+        for record in old_records:
+            db.session.delete(record)
+            db.session.commit()
+            _update_recommend(user_id, postId=record.post_id, remove_old=True)
+        # print('DELETE.................. ', deleted[0].id)
+        # results = [{"newsId": item.post_id} for item in old_records]
+        # return res(success=True, result=results).values()   
     find_record = YouLike.query.filter_by(user_id=user_id, post_id=news_id).first()
+    # add item to YouLike table
+    # print(f'FIND RECORD.... {(find_record.user_id, find_record.post_id, find_record.createAt)}')
     if not find_record:
         you_like = YouLike(user_id=int(user_id), post_id=int(news_id), createAt=_createAt)
         db.session.add(you_like)
         db.session.commit()
+        _update_recommend(userId=user_id, postId=news_id)
         return res(success=True,result={"youlikeId": you_like.id}).values()
     return res(success=True).values()
+
+def _update_recommend(userId, postId, recommend_k=10, remove_old=False):
+    if remove_old:
+        Recommend.query.filter_by(user_id=userId, from_post_id=postId).delete()
+        Recommend.query.filter_by(user_id=userId, from_post_id=None).delete()
+        db.session.commit()
+    
+    if not remove_old:
+        news_base = Posts.query.filter_by(id=postId).first()
+        content_preprocessed = utils.simple_preprocessing(news_base.content)
+        bow = id2word.doc2bow(content_preprocessed)
+        topics_dist = np.array(
+            [doc_top[1] for doc_top in lda_model.get_document_topics(bow=bow, minimum_probability=0.0)]
+        )
+        most_sims_offsets = distances.get_most_similar_news(topics_dist, np.array(topics_docs_dist), k=int(recommend_k)+1)[1:]
+        most_similar_news = []
+        for offset in most_sims_offsets:
+            news = Posts.query.offset(offset).first()
+            most_similar_news.append(Recommend(user_id=userId, post_id=news.id, from_post_id=postId))
+        db.session.add_all(most_similar_news)
+        db.session.commit()
