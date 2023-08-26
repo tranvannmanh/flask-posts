@@ -53,7 +53,7 @@ lda_model, corpus, id2word, topics_docs_dist = load_model()
 
 @bp.route('/get-similar', methods=['GET'])
 def get_k_similar():
-    items_size = request.args['itemsSize']
+    items_size = request.args['size']
     news_id = request.args['newsId']
     news_base = Posts.query.filter_by(id=news_id).first()
     content_preprocessed = utils.simple_preprocessing(news_base.content)
@@ -68,7 +68,10 @@ def get_k_similar():
     most_similar_news = []
     for offset in most_sims_offsets:
         news = Posts.query.offset(offset).first()
-        most_similar_news.append({"id": news.id, "title": news.title})
+        most_similar_news.append({"id": news.id, 
+                                  "title": news.title,
+                                  "category": news.type
+                                  })
     # print('MOST_SIMILAR_OFFSET...... ', most_sims_offsets)
     return res(success=True, 
                result=most_similar_news,
@@ -128,3 +131,17 @@ def _update_recommend(userId, postId, recommend_k=10, remove_old=False):
             most_similar_news.append(Recommend(user_id=userId, post_id=news.id, from_post_id=postId))
         db.session.add_all(most_similar_news)
         db.session.commit()
+
+@bp.route('/detail-by-id', methods=['GET'])
+def get_detail_by_id():
+    news_id = request.args['newsId']
+    news = Posts.query.filter_by(id=news_id).first()
+    if news:
+        return res(success=True, code=Response.status_code, result={
+            "id": news.id,
+            "image": news.image,
+            "title": news.title,
+            "content": news.content,
+            "category": news.type
+        }).values()
+    return res(success=True, code=404, result=None, message="Bài viết không tồn tại").values()

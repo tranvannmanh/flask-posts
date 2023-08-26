@@ -65,6 +65,7 @@ def get_recommend():
             "id": item[0].id,
             "title": item[0].title,
             "image": item[0].image,
+            "category": item[0].type,
             } for item in recommend_record.items]
     }
 
