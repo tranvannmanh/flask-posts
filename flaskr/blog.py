@@ -51,6 +51,40 @@ def load_model():
 
 lda_model, corpus, id2word, topics_docs_dist = load_model()
 
+@bp.route('/get-by-type', methods=['GET'])
+def get_new_by_type():
+    type = request.args['type']
+    page = request.args['page']
+    size = request.args['pageSize']
+    news = None
+    if type:
+        news = db.session.query(
+            Posts
+        ).filter(
+            and_(
+                Posts.type==type,
+                Posts.content!=None
+            )
+        ).order_by(func.random()).paginate(page=int(page), per_page=int(size))
+    else:
+        news = Posts.query.filter(Posts.content != None)\
+            .order_by(func.random())\
+            .paginate(page=int(page), per_page=int(size))
+    result = {
+        "currentPage": int(page),
+        "totalPage": 20,
+        "pageItems": int(size),
+        "data": [
+            {
+                "id": rec.id,
+                "title": rec.title,
+                "image": rec.image,
+                "category": rec.type
+            } for rec in news
+        ]
+    }
+    return res(success=True, result=result).values()
+
 @bp.route('/get-similar', methods=['GET'])
 def get_k_similar():
     items_size = request.args['size']
@@ -77,8 +111,6 @@ def get_k_similar():
                result=most_similar_news,
                code=Response.status_code
                ).values()
-
-
 
 @bp.route('/you-like', methods=['POST'])
 def update_you_like():
