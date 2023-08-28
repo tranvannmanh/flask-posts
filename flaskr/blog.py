@@ -120,10 +120,10 @@ def update_you_like():
     all_you_like = YouLike.query.filter_by(user_id=user_id).all()
 
     # remove old records
-    if len(all_you_like) >= 5:
+    if len(all_you_like) >= 10:
         old_records = YouLike.query.filter_by(user_id=user_id)\
                         .order_by(asc(YouLike.createAt))\
-                        .limit(len(all_you_like) - 4)\
+                        .limit(len(all_you_like) - 9)\
                         .all()
         for record in old_records:
             db.session.delete(record)
@@ -143,7 +143,7 @@ def update_you_like():
         return res(success=True,result={"youlikeId": you_like.id}).values()
     return res(success=True).values()
 
-def _update_recommend(userId, postId, recommend_k=10, remove_old=False):
+def _update_recommend(userId, postId, recommend_k=5, remove_old=False):
     if remove_old:
         Recommend.query.filter_by(user_id=userId, from_post_id=postId).delete()
         Recommend.query.filter_by(user_id=userId, from_post_id=None).delete()
@@ -177,3 +177,22 @@ def get_detail_by_id():
             "category": news.type
         }).values()
     return res(success=True, code=404, result=None, message="Bài viết không tồn tại").values()
+
+@bp.route('/ban-da-quan-tam', methods=['GET'])
+def ban_da_quan_tam():
+    user_id = session.get('user_id')
+    you_like = Posts.query\
+                .join(YouLike, Posts.id==YouLike.post_id)\
+                .add_column(YouLike.user_id)\
+                .filter_by(user_id=user_id)\
+                .all()
+    print('YOU LIKE ......... ', you_like)
+    result = [
+        {
+            "id": rec[0].id,
+            "title": rec[0].title,
+            "image": rec[0].image,
+            "type": rec[0].type
+        } for rec in you_like
+    ]
+    return res(success=True, result=result, code=Response.status_code).values()
