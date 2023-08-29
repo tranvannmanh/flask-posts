@@ -120,11 +120,12 @@ def update_you_like():
     all_you_like = YouLike.query.filter_by(user_id=user_id).all()
 
     # remove old records
-    if len(all_you_like) >= 10:
+    if len(all_you_like) >= 5:
         old_records = YouLike.query.filter_by(user_id=user_id)\
                         .order_by(asc(YouLike.createAt))\
-                        .limit(len(all_you_like) - 9)\
+                        .limit(len(all_you_like) - 4)\
                         .all()
+        
         for record in old_records:
             db.session.delete(record)
             db.session.commit()
@@ -143,7 +144,7 @@ def update_you_like():
         return res(success=True,result={"youlikeId": you_like.id}).values()
     return res(success=True).values()
 
-def _update_recommend(userId, postId, recommend_k=5, remove_old=False):
+def _update_recommend(userId, postId, recommend_k=8, remove_old=False):
     if remove_old:
         Recommend.query.filter_by(user_id=userId, from_post_id=postId).delete()
         Recommend.query.filter_by(user_id=userId, from_post_id=None).delete()
