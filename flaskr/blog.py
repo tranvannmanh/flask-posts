@@ -51,6 +51,54 @@ def load_model():
 
 lda_model, corpus, id2word, topics_docs_dist = load_model()
 
+
+# Update list of news recommened by Collaborative-filtering method
+def _collaborative_filtering_update_recommend(session_user_id, from_post_id):
+
+    rec = YouLike.query.all()
+    rec = [(re.user_id, re.post_id) for re in rec]
+    # users_id = [re.user_id for re in rec]
+    # print('USER LIKED... ', users_id)
+
+    # get unique users list
+    users_id = list(set([re[0] for re in rec]))
+    # get unique news list
+    posts_id = list(set([re[1] for re in rec]))
+    
+    rows_user_matrix = {}
+    for user_id in users_id:
+        rows_user_matrix[user_id] = []
+        for post_id in posts_id:
+            if (user_id, post_id) in rec:
+                rows_user_matrix[user_id].append(1)
+            else:
+                rows_user_matrix[user_id].append(0)
+
+    # create users like items matrix
+    matrix_users_like_items = np.array([rows_user_matrix[user_id] for user_id in users_id])
+
+    # Users Pearson correlation coefficients matrix
+    pearson_matrix_corrcoef = np.corrcoef(matrix_users_like_items)[:, users_id.index(session_user_id)]
+
+    # Get 3 most similar to session user
+    user_id_similar_you_indexs = np.argsort(pearson_matrix_corrcoef)[:3]
+    print('USER_ID_SIMILAR_INDEX... ', user_id_similar_you_indexs)
+    post_update_list = []
+    for index in user_id_similar_you_indexs:
+        print('CHOOSEN SIMILAR USER... ', rows_user_matrix[users_id[index]])
+        user_id_liked = rows_user_matrix[users_id[index]]
+        for i in range(len(user_id_liked)):
+            if rows_user_matrix[session_user_id] == 0 and user_id_liked[i] == 1:
+                post_update_list.append(Recommend(user_id=session_user_id, post_id=posts_id[i], from_post_id=from_post_id))
+
+    # update recommend list
+    if post_update_list:
+        db.session.add_all(post_update_list)
+        db.session.commit()
+
+    print('UPDATE RECOMMEND LIST ****************************************')
+
+
 @bp.route('/get-by-type', methods=['GET'])
 def get_new_by_type():
     type = request.args['type']
@@ -120,10 +168,10 @@ def update_you_like():
     all_you_like = YouLike.query.filter_by(user_id=user_id).all()
 
     # remove old records
-    if len(all_you_like) >= 5:
+    if len(all_you_like) >= 8:
         old_records = YouLike.query.filter_by(user_id=user_id)\
                         .order_by(asc(YouLike.createAt))\
-                        .limit(len(all_you_like) - 4)\
+                        .limit(len(all_you_like) - 7)\
                         .all()
         
         for record in old_records:
@@ -140,11 +188,12 @@ def update_you_like():
         you_like = YouLike(user_id=int(user_id), post_id=int(news_id), createAt=_createAt)
         db.session.add(you_like)
         db.session.commit()
+        _collaborative_filtering_update_recommend(session_user_id=user_id, from_post_id=news_id)
         _update_recommend(userId=user_id, postId=news_id)
         return res(success=True,result={"youlikeId": you_like.id}).values()
     return res(success=True).values()
 
-def _update_recommend(userId, postId, recommend_k=8, remove_old=False):
+def _update_recommend(userId, postId, recommend_k=6, remove_old=False):
     if remove_old:
         Recommend.query.filter_by(user_id=userId, from_post_id=postId).delete()
         Recommend.query.filter_by(user_id=userId, from_post_id=None).delete()
